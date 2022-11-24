@@ -19,8 +19,22 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
 
+        const usersCollection = client.db('oldgold').collection('users');
         const categoriesCollection = client.db('oldgold').collection('categories');
 
+        // User POST...........
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const users = await usersCollection.insertOne(user);
+            res.send(users);
+        })
+        app.get('/users', async (req, res) => {
+            const query = {};
+            const users = await usersCollection.find(query).toArray();
+            res.send(users);
+        })
+
+        // Categories Get..................
         app.get('/categories', async (req, res) => {
             const query = {};
             const categories = await categoriesCollection.find(query).limit(3).toArray();
