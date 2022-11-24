@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 require('dotenv').config();
 const app = express();
@@ -21,6 +22,20 @@ async function run() {
 
         const usersCollection = client.db('oldgold').collection('users');
         const categoriesCollection = client.db('oldgold').collection('categories');
+        const productsCollection = client.db('oldgold').collection('products');
+
+
+        // JWT API
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACESS_TOKEN, { expiresIn: '1h' })
+                return res.send({ accessToken: token })
+            }
+            res.status(403).send('unauthorized User')
+        })
 
         // User POST...........
         app.post('/users', async (req, res) => {
@@ -28,6 +43,7 @@ async function run() {
             const users = await usersCollection.insertOne(user);
             res.send(users);
         })
+        //  User GET
         app.get('/users', async (req, res) => {
             const query = {};
             const users = await usersCollection.find(query).toArray();
@@ -39,6 +55,13 @@ async function run() {
             const query = {};
             const categories = await categoriesCollection.find(query).limit(3).toArray();
             res.send(categories);
+        })
+
+        // Products POST.......................
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const products = await usersCollection.insertOne(product);
+            res.send(products);
         })
 
     }
