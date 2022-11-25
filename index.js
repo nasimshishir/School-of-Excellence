@@ -60,7 +60,14 @@ async function run() {
         // Products POST.......................
         app.post('/products', async (req, res) => {
             const product = req.body;
-            const products = await usersCollection.insertOne(product);
+            const products = await productsCollection.insertOne(product);
+            res.send(products);
+        })
+
+        // Products GET for single category Products..................
+        app.get('/products/:id', async (req, res) => {
+            const query = req.params.id;
+            const products = await productsCollection.find(query).toArray();
             res.send(products);
         })
 
