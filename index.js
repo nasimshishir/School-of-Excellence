@@ -73,7 +73,8 @@ async function run() {
 
         // Products GET for My Products.................
         app.get('/products', async (req, res) => {
-            const query = req.query.email;
+            const email = req.query.email;
+            const query = { sellerEmail: email }
             const products = await productsCollection.find(query).toArray();
             res.send(products);
         })
