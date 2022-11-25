@@ -65,8 +65,9 @@ async function run() {
         })
 
         // Products GET for single category Products..................
-        app.get('/products/:id', async (req, res) => {
-            const query = req.params.id;
+        app.get('/products/:name', async (req, res) => {
+            const category = req.params.name;
+            const query = { category: category }
             const products = await productsCollection.find(query).toArray();
             res.send(products);
         })
