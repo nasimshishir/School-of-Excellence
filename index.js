@@ -23,6 +23,7 @@ async function run() {
         const usersCollection = client.db('oldgold').collection('users');
         const categoriesCollection = client.db('oldgold').collection('categories');
         const productsCollection = client.db('oldgold').collection('products');
+        const bookingsCollection = client.db('oldgold').collection('bookings');
 
 
         // JWT API
@@ -55,14 +56,14 @@ async function run() {
             const query = {};
             const categories = await categoriesCollection.find(query).limit(3).toArray();
             res.send(categories);
-        })
+        });
 
-        // Products POST.......................
+        // Products POST from add products page.......................
         app.post('/products', async (req, res) => {
             const product = req.body;
             const products = await productsCollection.insertOne(product);
             res.send(products);
-        })
+        });
 
         // Products GET for single category Products..................
         app.get('/products/:name', async (req, res) => {
@@ -70,7 +71,7 @@ async function run() {
             const query = { category: category }
             const products = await productsCollection.find(query).toArray();
             res.send(products);
-        })
+        });
 
         // Products GET for My Products.................
         app.get('/products', async (req, res) => {
@@ -78,7 +79,23 @@ async function run() {
             const query = { sellerEmail: email }
             const products = await productsCollection.find(query).toArray();
             res.send(products);
-        })
+        });
+
+        // Bookings POST from products page.................
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+            const bookings = await bookingsCollection.insertOne(booking);
+            res.send(bookings);
+        });
+
+        // Bookings GET by buyer in my bookings page of buyer..............
+        app.get('/bookings', async (req, res) => {
+            const email = req.query.email;
+            const query = { sellerEmail: email }
+            const myBookings = await bookingsCollection.find(query).toArray();
+            res.send(myBookings);
+        });
+
 
     }
     finally {
