@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 require('dotenv').config();
@@ -44,11 +44,20 @@ async function run() {
             const users = await usersCollection.insertOne(user);
             res.send(users);
         })
-        //  User GET
+
+        //  User GET for admin............
         app.get('/users', async (req, res) => {
             const query = {};
             const users = await usersCollection.find(query).toArray();
             res.send(users);
+        })
+
+        //  User GET for users............
+        app.get('/user', async (req, res) => {
+            const userEmail = req.query.email;
+            const query = { email: userEmail };
+            const user = await usersCollection.findOne(query);
+            res.send(user);
         })
 
         // Categories Get..................
@@ -79,6 +88,42 @@ async function run() {
             const query = { sellerEmail: email }
             const products = await productsCollection.find(query).toArray();
             res.send(products);
+        });
+
+        // Product DELETE from myproducts of Seller.............
+        app.delete('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await productsCollection.deleteOne(query);
+            res.send(result)
+        })
+
+        // Product Status UPDATE/PATCH by Seller..........
+        app.patch('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const status = req.body.status;
+            const query = { _id: ObjectId(id) }
+            const updatedStaus = {
+                $set: {
+                    status: status
+                }
+            }
+            const result = await productsCollection.updateOne(query, updatedStaus);
+            res.send(result);
+        });
+
+        // Product Ad Status UPDATE by Seller...........
+        app.patch('/productad/:id', async (req, res) => {
+            const id = req.params.id;
+            const status = req.body.adStatus;
+            const query = { _id: ObjectId(id) }
+            const updatedStaus = {
+                $set: {
+                    adStatus: status
+                }
+            }
+            const result = await productsCollection.updateOne(query, updatedStaus);
+            res.send(result);
         });
 
         // Bookings POST from products page.................
