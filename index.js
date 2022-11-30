@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 const port = process.env.PORT || 5000;
 require('dotenv').config();
 const app = express();
@@ -10,6 +11,23 @@ const app = express();
 
 app.use(cors())
 app.use(express.json())
+
+function verifyJwt(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send('Unauthorized Access');
+    }
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (error, decoded) {
+        if (error) {
+            return res.status(403).send({ message: 'forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+
+}
 
 
 // MongoDB
@@ -32,31 +50,45 @@ async function run() {
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACESS_TOKEN, { expiresIn: '1h' })
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1d' })
                 return res.send({ accessToken: token })
             }
-            res.status(403).send('unauthorized User')
+            res.status(403).send('unauthorized access')
         })
 
         // User POST...........
-        app.post('/users', async (req, res) => {
+        app.put('/users/:email', async (req, res) => {
             const user = req.body;
-            const users = await usersCollection.insertOne(user);
-            res.send(users);
-        })
+            const email = req.params.email;
+            const filter = { email: email }
+            const options = { upsert: true }
+            const updateDoc = {
+                $set: {
+                    name: user.name,
+                    email: user.email,
+                    photo: user.photo,
+                    userRole: user.userRole,
+                    verified: false
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc, options)
+            res.send(result)
+        });
 
         //  User GET for admin............
-        app.get('/users', async (req, res) => {
-            const query = {};
+        app.get('/users', verifyJwt, async (req, res) => {
+            const userRole = req.query.userRole;
+            const query = { userRole: userRole };
             const users = await usersCollection.find(query).toArray();
             res.send(users);
         })
 
-        //  User GET for users............
-        app.get('/user', async (req, res) => {
-            const userEmail = req.query.email;
+        //  User GET for Verification............
+        app.get('/user/:email', async (req, res) => {
+            const userEmail = req.params.email;
             const query = { email: userEmail };
             const user = await usersCollection.findOne(query);
+            console.log(user.userRole);
             res.send(user);
         })
 
@@ -77,7 +109,10 @@ async function run() {
         // Products GET for single category Products..................
         app.get('/products/:name', async (req, res) => {
             const category = req.params.name;
-            const query = { category: category }
+            const query = {
+                category: category,
+                status: true
+            }
             const products = await productsCollection.find(query).toArray();
             res.send(products);
         });
@@ -86,6 +121,13 @@ async function run() {
         app.get('/products', async (req, res) => {
             const email = req.query.email;
             const query = { sellerEmail: email }
+            const products = await productsCollection.find(query).toArray();
+            res.send(products);
+        });
+
+        // Products GET for Homepage Featured Products.................
+        app.get('/featured', async (req, res) => {
+            const query = { adStatus: true }
             const products = await productsCollection.find(query).toArray();
             res.send(products);
         });
